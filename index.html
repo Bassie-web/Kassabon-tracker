@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Kassabon Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0d;
+    --surface: #1a1a17;
+    --surface2: #242420;
+    --surface3: #2e2e29;
+    --border: #3a3a34;
+    --text: #f0ede6;
+    --text-dim: #8a8778;
+    --text-muted: #5a5a52;
+    --ah-color: #00b2e3;
+    --ah-dim: rgba(0,178,227,0.12);
+    --aldi-color: #ff6b35;
+    --aldi-dim: rgba(255,107,53,0.12);
+    --green: #7ecb8f;
+    --green-dim: rgba(126,203,143,0.12);
+    --yellow: #f5c842;
+    --red: #e05c5c;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+  header h1 span { color: var(--yellow); font-style: italic; }
+  .header-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+  /* ── Bottom nav ── */
+  nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+  }
+  nav button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: 12px 0 10px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    transition: color 0.2s;
+  }
+  nav button.active { color: var(--yellow); }
+  nav button svg { width: 20px; height: 20px; }
+
+  /* ── Pages ── */
+  .page { display: none; padding: 20px; }
+  .page.active { display: block; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .card-label {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+  }
+
+  /* ── Scan page ── */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--yellow); background: rgba(245,200,66,0.04); }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 40px; margin-bottom: 12px; }
+  .upload-zone h3 { font-family: 'DM Serif Display', serif; font-size: 18px; margin-bottom: 6px; }
+  .upload-zone p { font-size: 13px; color: var(--text-dim); }
+
+  .store-select {
+    display: flex; gap: 10px; margin-bottom: 16px;
+  }
+  .store-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .store-btn.ah.active { border-color: var(--ah-color); color: var(--ah-color); background: var(--ah-dim); }
+  .store-btn.aldi.active { border-color: var(--aldi-color); color: var(--aldi-color); background: var(--aldi-dim); }
+
+  .preview-img {
+    width: 100%; max-height: 220px; object-fit: contain;
+    border-radius: var(--radius-sm); margin-bottom: 14px;
+    border: 1px solid var(--border);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: var(--yellow);
+    color: #0f0f0d;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  /* ── Processing states ── */
+  .status-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .status-box.visible { display: block; }
+  .status-step {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0;
+    font-size: 13px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .status-step:last-child { border-bottom: none; }
+  .status-step.done { color: var(--green); }
+  .status-step.active { color: var(--text); }
+  .status-step.error { color: var(--red); }
+  .status-step.error .dot { background: var(--red); }
+  .status-step .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text-muted); flex-shrink: 0;
+  }
+  .status-step.done .dot { background: var(--green); }
+  .status-step.active .dot { background: var(--yellow); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── Results ── */
+  .result-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .result-total {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+  }
+  .store-badge {
+    font-size: 11px; font-family: 'DM Mono', monospace;
+    padding: 4px 10px; border-radius: 20px;
+    font-weight: 500;
+  }
+  .store-badge.ah { background: var(--ah-dim); color: var(--ah-color); }
+  .store-badge.aldi { background: var(--aldi-dim); color: var(--aldi-color); }
+
+  .item-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-name { font-size: 14px; flex: 1; }
+  .item-cat { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .item-price { font-family: 'DM Mono', monospace; font-size: 14px; text-align: right; }
+  .item-compare { font-size: 11px; color: var(--green); }
+  .item-compare.worse { color: var(--red); }
+
+  .savings-banner {
+    background: var(--green-dim);
+    border: 1px solid rgba(126,203,143,0.3);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px;
+  }
+  .savings-banner .label { font-size: 13px; color: var(--green); }
+  .savings-banner .amount { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--green); }
+
+  /* ── Monthly page ── */
+  .month-selector {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+  }
+  .month-selector h2 { font-family: 'DM Serif Display', serif; font-size: 20px; }
+  .month-nav { display: flex; gap: 8px; }
+  .month-nav button {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); width: 32px; height: 32px;
+    border-radius: var(--radius-sm); cursor: pointer; font-size: 16px;
+  }
+
+  .big-total {
+    text-align: center; padding: 24px 0;
+  }
+  .big-total .label { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .big-total .amount { font-family: 'DM Serif Display', serif; font-size: 48px; color: var(--yellow); }
+  .big-total .sub { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+
+  .cat-bar-row {
+    margin-bottom: 14px;
+  }
+  .cat-bar-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+  .cat-bar-header .name { color: var(--text-dim); }
+  .cat-bar-header .val { font-family: 'DM Mono', monospace; color: var(--text); }
+  .cat-bar-track {
+    height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden;
+  }
+  .cat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+
+  .receipt-list-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .receipt-list-item:last-child { border-bottom: none; }
+  .receipt-list-item:hover { opacity: 0.8; }
+  .receipt-date { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .receipt-info .store { font-size: 14px; font-weight: 500; }
+  .receipt-total { font-family: 'DM Mono', monospace; font-size: 15px; }
+
+  /* ── Savings page ── */
+  .savings-header {
+    text-align: center; padding: 20px 0 10px;
+  }
+  .savings-header h2 { font-family: 'DM Serif Display', serif; font-size: 26px; margin-bottom: 4px; }
+  .savings-header p { font-size: 13px; color: var(--text-dim); }
+
+  .savings-big {
+    text-align: center; padding: 20px;
+    background: var(--green-dim);
+    border: 1px solid rgba(126,203,143,0.25);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+  }
+  .savings-big .label { font-size: 11px; color: var(--green); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.8px; }
+  .savings-big .amount { font-family: 'DM Serif Display', serif; font-size: 52px; color: var(--green); line-height: 1.1; }
+  .savings-big .sub { font-size: 13px; color: rgba(126,203,143,0.7); margin-top: 6px; }
+
+  .compare-row {
+    display: flex; gap: 10px; margin-bottom: 14px;
+  }
+  .compare-card {
+    flex: 1; padding: 16px;
+    border-radius: var(--radius-sm);
+    text-align: center;
+  }
+  .compare-card.ah { background: var(--ah-dim); border: 1px solid rgba(0,178,227,0.2); }
+  .compare-card.aldi { background: var(--aldi-dim); border: 1px solid rgba(255,107,53,0.2); }
+  .compare-card .store-name { font-size: 11px; font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+  .compare-card.ah .store-name { color: var(--ah-color); }
+  .compare-card.aldi .store-name { color: var(--aldi-color); }
+  .compare-card .amount { font-family: 'DM Serif Display', serif; font-size: 26px; }
+  .compare-card .sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .empty-state {
+    text-align: center; padding: 60px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state h3 { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--text-dim); margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; line-height: 1.5; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 4px; font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    background: var(--surface3); color: var(--text-dim);
+  }
+
+  /* Scrollable items container */
+  .items-scroll { max-height: 350px; overflow-y: auto; }
+
+  /* Month comparison chart */
+  .month-bar-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .month-bar-label { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text-muted); width: 36px; }
+  .month-bar-track { flex: 1; height: 28px; background: var(--surface3); border-radius: 4px; overflow: hidden; position: relative; }
+  .month-bar-fill { height: 100%; border-radius: 4px; background: var(--yellow); opacity: 0.8; transition: width 0.6s ease; display: flex; align-items: center; padding-left: 10px; }
+  .month-bar-fill span { font-size: 11px; font-family: 'DM Mono', monospace; color: #0f0f0d; font-weight: 600; white-space: nowrap; }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); padding: 10px 18px; border-radius: 20px;
+    font-size: 13px; z-index: 200; opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .toast.show { opacity: 1; }
+
+  .comparison-note {
+    font-size: 12px; color: var(--text-muted); line-height: 1.5;
+    padding: 10px; background: var(--surface2); border-radius: var(--radius-sm);
+    margin-top: 10px;
+  }
+
+  /* ── Collapsible ── */
+  details summary {
+    cursor: pointer; list-style: none; display: flex;
+    justify-content: space-between; align-items: center;
+    font-size: 13px; color: var(--text-dim); padding: 8px 0;
+  }
+  details summary::after { content: '▾'; }
+  details[open] summary::after { content: '▴'; }
+
+  /* ── Sync indicator ── */
+  .sync-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px; font-family: 'DM Mono', monospace;
+    color: var(--text-muted);
+  }
+  .sync-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text-muted); display: inline-block;
+    margin-right: 6px; flex-shrink: 0;
+  }
+  .sync-dot.synced { background: var(--green); }
+  .sync-dot.syncing { background: var(--yellow); animation: pulse 1s infinite; }
+  .sync-dot.error { background: var(--red); }
+  .sync-bar button {
+    background: none; border: none; color: var(--text-muted);
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    cursor: pointer; padding: 2px 6px;
+    border: 1px solid var(--border); border-radius: 4px;
+  }
+  .sync-bar button:hover { color: var(--text); border-color: var(--text-dim); }
+
+  /* ── Setup card ── */
+  .setup-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+  .setup-card h3 { font-family: 'DM Serif Display', serif; font-size: 18px; margin-bottom: 8px; }
+  .setup-card p { font-size: 13px; color: var(--text-dim); line-height: 1.5; margin-bottom: 14px; }
+  .setup-card .drive-icon { font-size: 32px; margin-bottom: 10px; }
+
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Kassabon <span>Tracker</span></h1>
+  <div class="header-sub">Albert Heijn & ALDI · NL</div>
+</header>
+<div class="sync-bar" id="sync-bar">
+  <div style="display:flex;align-items:center">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span id="sync-label">Google Drive: laden…</span>
+  </div>
+  <button onclick="manualSync()">↻ Sync</button>
+</div>
+
+<!-- PAGES -->
+<div id="page-scan" class="page active">
+  <div id="scan-initial">
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Which store is this receipt from?</p>
+    <div class="store-select">
+      <button class="store-btn ah active" id="btn-ah" onclick="selectStore('ah')">Albert Heijn</button>
+      <button class="store-btn aldi" id="btn-aldi" onclick="selectStore('aldi')">ALDI</button>
+    </div>
+
+    <div class="upload-zone" id="drop-zone">
+      <input type="file" accept="image/*" capture="environment" id="file-input" onchange="handleFile(event)">
+      <div class="upload-icon">📸</div>
+      <h3>Scan kassabon</h3>
+      <p>Tap to take a photo or upload from gallery</p>
+    </div>
+  </div>
+
+  <div id="scan-preview" style="display:none">
+    <img id="preview-img" class="preview-img" src="" alt="Receipt preview">
+    <div id="status-box" class="status-box">
+      <div class="status-step" id="step-1"><div class="dot"></div>Kassabon lezen met AI…</div>
+      <div class="status-step" id="step-2"><div class="dot"></div>Items & prijzen extraheren…</div>
+      <div class="status-step" id="step-3"><div class="dot"></div>Producten categoriseren…</div>
+      <div class="status-step" id="step-4"><div class="dot"></div>Vergelijkingsprijzen zoeken via web…</div>
+    </div>
+    <button class="btn" id="process-btn" onclick="processReceipt()">Analyseer kassabon</button>
+    <button class="btn secondary" style="margin-top:10px" onclick="resetScan()">Andere foto</button>
+  </div>
+
+  <div id="scan-result" style="display:none">
+    <!-- filled dynamically -->
+  </div>
+</div>
+
+<div id="page-monthly" class="page">
+  <div class="month-selector">
+    <h2 id="month-title">–</h2>
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">‹</button>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+  </div>
+  <div id="monthly-content"></div>
+</div>
+
+<div id="page-savings" class="page">
+  <div id="savings-content"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav>
+  <button class="active" id="nav-scan" onclick="showPage('scan')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h5v5H3zM3 16h5v5H3zM16 3h5v5h-5zM16 16h5v5h-5zM8 12h8M12 8v8"/></svg>
+    Scannen
+  </button>
+  <button id="nav-monthly" onclick="showPage('monthly')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    Maandoverzicht
+  </button>
+  <button id="nav-savings" onclick="showPage('savings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+    Bespaard
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let state = {
+  receipts: [],
+  currentMonth: new Date().getMonth(),
+  currentYear: new Date().getFullYear(),
+  selectedStore: 'ah',
+  currentImageBase64: null,
+};
+
+const CATEGORY_COLORS = {
+  'Groente & Fruit': '#7ecb8f',
+  'Vlees & Vis': '#e05c5c',
+  'Zuivel & Eieren': '#f5c842',
+  'Brood & Bakkerij': '#d4a96a',
+  'Snacks & Dranken': '#c47fe0',
+  'Huishouden': '#7eb8e0',
+  'Persoonlijke verzorging': '#e07eb8',
+  'Overig': '#8a8778',
+};
+
+// Load from localStorage (local cache)
+function loadLocalState() {
+  try {
+    const saved = localStorage.getItem('kassabon_state');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state.receipts = parsed.receipts || [];
+    }
+  } catch(e) {}
+}
+
+function saveLocalState() {
+  try {
+    localStorage.setItem('kassabon_state', JSON.stringify({ receipts: state.receipts }));
+  } catch(e) {}
+}
+
+// Keep old name working (called from processReceipt)
+function saveState() {
+  saveLocalState();
+  // Also push to Drive in background
+  syncToDrive().catch(e => console.warn('Background Drive sync failed:', e));
+}
+
+// ═══════════════════════════════════════════
+// GOOGLE DRIVE SYNC
+// ═══════════════════════════════════════════
+const DRIVE_FILENAME = 'kassabon_tracker_data.json';
+let driveFileId = null;  // cached after first lookup
+
+function setSyncStatus(status, label) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot ' + status;
+  lbl.textContent = label;
+}
+
+async function callDriveMCP(userMessage) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      system: `You are a Google Drive file manager. Use the Google Drive MCP tools to complete the requested task.
+Always respond with a JSON object only — no markdown, no explanation:
+For read operations: {"success": true, "data": <parsed JSON content or null>, "fileId": "<id or null>"}
+For write operations: {"success": true, "fileId": "<id>"}
+For errors: {"success": false, "error": "<message>"}`,
+      mcp_servers: [{ type: "url", url: "https://gdrive.mcp.claude.com/mcp", name: "gdrive" }],
+      messages: [{ role: "user", content: userMessage }]
+    })
+  });
+  const data = await response.json();
+  if (data.error) throw new Error(data.error.message);
+
+  // Agentic loop for MCP tool use
+  const messages = [
+    { role: "user", content: userMessage },
+    { role: "assistant", content: data.content }
+  ];
+
+  let current = data;
+  let turns = 0;
+  while (current.stop_reason === 'tool_use' && turns < 6) {
+    turns++;
+    const toolUses = current.content.filter(c => c.type === 'tool_use');
+    const toolResults = toolUses.map(t => ({
+      type: "tool_result", tool_use_id: t.id,
+      content: "Tool executed successfully."
+    }));
+    messages.push({ role: "user", content: toolResults });
+
+    const next = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: `You are a Google Drive file manager. Use the Google Drive MCP tools to complete the requested task.
+Always respond with a JSON object only — no markdown, no explanation:
+For read operations: {"success": true, "data": <parsed JSON content or null>, "fileId": "<id or null>"}
+For write operations: {"success": true, "fileId": "<id>"}
+For errors: {"success": false, "error": "<message>"}`,
+        mcp_servers: [{ type: "url", url: "https://gdrive.mcp.claude.com/mcp", name: "gdrive" }],
+        messages,
+      })
+    });
+    current = await next.json();
+    messages.push({ role: "assistant", content: current.content });
+  }
+
+  // Extract final text
+  const textBlocks = current.content.filter(c => c.type === 'text');
+  const text = textBlocks.map(c => c.text || '').join('').trim();
+  const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  return JSON.parse(clean);
+}
+
+async function loadFromDrive() {
+  setSyncStatus('syncing', 'Google Drive: laden…');
+  try {
+    const result = await callDriveMCP(
+      `Search for a file named exactly "${DRIVE_FILENAME}" in Google Drive. If found, read its contents and return the parsed JSON data along with the file ID. If not found, return {"success": true, "data": null, "fileId": null}.`
+    );
+
+    if (result.success && result.data) {
+      // Merge: Drive is source of truth, but keep any local receipts not in Drive
+      const driveReceipts = result.data.receipts || [];
+      const localIds = new Set(driveReceipts.map(r => r.id));
+      const localOnly = state.receipts.filter(r => !localIds.has(r.id));
+      state.receipts = [...driveReceipts, ...localOnly].sort((a,b) => new Date(a.date) - new Date(b.date));
+      if (result.fileId) driveFileId = result.fileId;
+      saveLocalState();
+      setSyncStatus('synced', `Google Drive: gesynchroniseerd`);
+      showToast('📂 Data geladen uit Google Drive');
+    } else if (result.success && result.data === null) {
+      // No file yet — will be created on first save
+      setSyncStatus('synced', 'Google Drive: verbonden (nieuw bestand)');
+    } else {
+      throw new Error(result.error || 'Onbekende fout');
+    }
+  } catch(e) {
+    console.error('Drive load error:', e);
+    setSyncStatus('error', 'Drive: fout bij laden (lokale data)');
+    showToast('⚠️ Drive niet bereikbaar, lokale data gebruikt');
+  }
+  // Re-render active page
+  const activePage = document.querySelector('.page.active')?.id?.replace('page-', '');
+  if (activePage === 'monthly') renderMonthly();
+  if (activePage === 'savings') renderSavings();
+}
+
+async function syncToDrive() {
+  setSyncStatus('syncing', 'Google Drive: opslaan…');
+  const payload = JSON.stringify({ receipts: state.receipts, lastUpdated: new Date().toISOString() });
+
+  try {
+    let prompt;
+    if (driveFileId) {
+      prompt = `Update the Google Drive file with ID "${driveFileId}" with this JSON content: ${payload}. Return {"success": true, "fileId": "${driveFileId}"}.`;
+    } else {
+      prompt = `Create a new file named "${DRIVE_FILENAME}" in Google Drive with this JSON content: ${payload}. Return {"success": true, "fileId": "<new file id>"}.`;
+    }
+
+    const result = await callDriveMCP(prompt);
+    if (result.success) {
+      if (result.fileId) driveFileId = result.fileId;
+      const now = new Date().toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit'});
+      setSyncStatus('synced', `Drive: opgeslagen om ${now}`);
+    } else {
+      throw new Error(result.error || 'Schrijffout');
+    }
+  } catch(e) {
+    console.error('Drive save error:', e);
+    setSyncStatus('error', 'Drive: opslaan mislukt');
+    showToast('⚠️ Niet opgeslagen naar Drive');
+  }
+}
+
+async function manualSync() {
+  setSyncStatus('syncing', 'Handmatig synchroniseren…');
+  await loadFromDrive();
+  if (state.receipts.length > 0) await syncToDrive();
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  if (page === 'monthly') renderMonthly();
+  if (page === 'savings') renderSavings();
+}
+
+// ═══════════════════════════════════════════
+// SCAN PAGE
+// ═══════════════════════════════════════════
+function selectStore(store) {
+  state.selectedStore = store;
+  document.getElementById('btn-ah').classList.toggle('active', store === 'ah');
+  document.getElementById('btn-aldi').classList.toggle('active', store === 'aldi');
+}
+
+function handleFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Resize large images before sending to API (max 1500px wide)
+  const img = new Image();
+  const objectUrl = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(objectUrl);
+    const MAX = 1500;
+    let w = img.width, h = img.height;
+    if (w > MAX || h > MAX) {
+      const ratio = Math.min(MAX / w, MAX / h);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    // Always output as JPEG for API compatibility
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    state.currentImageBase64 = dataUrl.split(',')[1];
+    state.currentImageMimeType = 'image/jpeg';
+    document.getElementById('preview-img').src = dataUrl;
+    document.getElementById('scan-initial').style.display = 'none';
+    document.getElementById('scan-preview').style.display = 'block';
+    document.getElementById('scan-result').style.display = 'none';
+  };
+  img.onerror = () => {
+    // Fallback: read as-is
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      state.currentImageBase64 = dataUrl.split(',')[1];
+      state.currentImageMimeType = file.type || 'image/jpeg';
+      document.getElementById('preview-img').src = dataUrl;
+      document.getElementById('scan-initial').style.display = 'none';
+      document.getElementById('scan-preview').style.display = 'block';
+      document.getElementById('scan-result').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  };
+  img.src = objectUrl;
+}
+
+function resetScan() {
+  state.currentImageBase64 = null;
+  state.currentImageMimeType = null;
+  document.getElementById('scan-initial').style.display = 'block';
+  document.getElementById('scan-preview').style.display = 'none';
+  document.getElementById('scan-result').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  const statusBox = document.getElementById('status-box');
+  statusBox.classList.remove('visible');
+  statusBox.querySelectorAll('.err-msg').forEach(e => e.remove());
+  resetSteps();
+}
+
+function resetSteps() {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('step-' + i);
+    el.className = 'status-step';
+  });
+}
+
+function setStep(n, state_) {
+  const el = document.getElementById('step-' + n);
+  el.className = 'status-step ' + state_;
+}
+
+async function processReceipt() {
+  if (!state.currentImageBase64) return;
+  const btn = document.getElementById('process-btn');
+  btn.disabled = true;
+
+  document.getElementById('status-box').classList.add('visible');
+  resetSteps();
+  setStep(1, 'active');
+
+  try {
+    // Step 1+2+3: Claude reads the receipt
+    const receiptData = await callClaudeForReceipt(state.currentImageBase64, state.selectedStore);
+    setStep(1, 'done'); setStep(2, 'done'); setStep(3, 'done');
+    setStep(4, 'active');
+
+    // Step 4: Get comparison prices
+    const comparisonStore = state.selectedStore === 'ah' ? 'ALDI' : 'Albert Heijn';
+    const withComparisons = await callClaudeForComparisons(receiptData, comparisonStore);
+    setStep(4, 'done');
+
+    // Save receipt
+    const receipt = {
+      id: Date.now(),
+      date: receiptData.date ? receiptData.date : new Date().toISOString(),
+      store: state.selectedStore,
+      items: withComparisons.items,
+      total: withComparisons.total,
+      comparisonTotal: withComparisons.comparisonTotal,
+      savings: withComparisons.savings,
+      comparisonStore: comparisonStore,
+    };
+    state.receipts.push(receipt);
+    saveState();
+
+    renderResult(receipt);
+    document.getElementById('scan-preview').style.display = 'none';
+    document.getElementById('scan-result').style.display = 'block';
+    btn.disabled = false;
+
+  } catch(err) {
+    console.error('processReceipt error:', err);
+    // Mark current active step as error
+    [1,2,3,4].forEach(i => {
+      const el = document.getElementById('step-' + i);
+      if (el.classList.contains('active')) el.className = 'status-step error';
+    });
+    // Show error message in UI instead of just a toast
+    const statusBox = document.getElementById('status-box');
+    const errDiv = document.createElement('div');
+    errDiv.style.cssText = 'margin-top:12px;padding:10px;background:rgba(224,92,92,0.1);border:1px solid rgba(224,92,92,0.3);border-radius:8px;font-size:13px;color:#e05c5c;line-height:1.5';
+    errDiv.innerHTML = `<strong>Fout bij verwerken</strong><br>${escHtml(err.message || 'Onbekende fout')}`;
+    // Remove old error divs
+    statusBox.querySelectorAll('.err-msg').forEach(e => e.remove());
+    errDiv.className = 'err-msg';
+    statusBox.appendChild(errDiv);
+    btn.disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════
+// CLAUDE API CALLS
+// ═══════════════════════════════════════════
+async function callClaudeForReceipt(base64Image, store) {
+  const storeName = store === 'ah' ? 'Albert Heijn' : 'ALDI';
+  const mimeType = state.currentImageMimeType || 'image/jpeg';
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2048,
+      system: `You are a Dutch supermarket receipt parser. Extract ALL items from the receipt image.
+Respond ONLY with valid JSON, no markdown, no explanation, no code fences.
+Format:
+{
+  "store": "${storeName}",
+  "date": "YYYY-MM-DD",
+  "total": 0.00,
+  "items": [
+    {
+      "name": "product name in Dutch",
+      "price": 0.00,
+      "quantity": 1,
+      "category": "one of: Groente & Fruit, Vlees & Vis, Zuivel & Eieren, Brood & Bakkerij, Snacks & Dranken, Huishouden, Persoonlijke verzorging, Overig"
+    }
+  ]
+}
+Rules:
+- Include every line item on the receipt
+- For discounts/kortingen: subtract from the relevant item price or add as negative-price item
+- If date unclear use today's date
+- Prices must be numbers (not strings)
+- If total is unclear, sum the item prices`,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "image", source: { type: "base64", media_type: mimeType, data: base64Image } },
+          { type: "text", text: "Parse this Dutch supermarket receipt completely and return JSON only." }
+        ]
+      }]
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`API fout ${response.status}: ${errText.slice(0, 200)}`);
+  }
+
+  const data = await response.json();
+
+  if (data.error) throw new Error(`Claude fout: ${data.error.message}`);
+  if (!data.content || data.content.length === 0) throw new Error('Leeg antwoord van Claude');
+
+  const text = data.content.map(c => c.text || '').join('').trim();
+  if (!text) throw new Error('Claude gaf geen tekst terug — probeer een duidelijkere foto');
+
+  const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  try {
+    const parsed = JSON.parse(clean);
+    if (!parsed.items || parsed.items.length === 0) throw new Error('Geen items gevonden op de kassabon');
+    // Ensure all prices are numbers
+    parsed.items = parsed.items.map(i => ({ ...i, price: parseFloat(i.price) || 0 }));
+    parsed.total = parseFloat(parsed.total) || parsed.items.reduce((s, i) => s + i.price, 0);
+    return parsed;
+  } catch(e) {
+    if (e.message.includes('items')) throw e;
+    throw new Error(`JSON parse fout: ${e.message}. Reactie: ${clean.slice(0, 100)}`);
+  }
+}
+
+async function callClaudeForComparisons(receiptData, comparisonStore) {
+  const itemList = receiptData.items.map(i => `- ${i.name} (€${i.price.toFixed(2)})`).join('\n');
+
+  const systemPrompt = `You are a Dutch supermarket price comparison assistant.
+You are given a list of products bought at ${receiptData.store === 'ah' ? 'Albert Heijn' : 'ALDI'} in the Netherlands.
+Your task: find the equivalent or closest matching product price at ${comparisonStore} NL for each item.
+Use web search to look up current ${comparisonStore} prices. Search in Dutch, e.g. "${comparisonStore} melk prijs" or "${comparisonStore} online boodschappen".
+After searching, respond ONLY with valid JSON — no markdown, no explanation, no code fences:
+{
+  "items": [
+    {
+      "name": "original product name",
+      "price": 0.00,
+      "category": "Groente & Fruit|Vlees & Vis|Zuivel & Eieren|Brood & Bakkerij|Snacks & Dranken|Huishouden|Persoonlijke verzorging|Overig",
+      "quantity": 1,
+      "comparePrice": 0.00,
+      "compareNote": "short note like 'Eigen merk' or 'Vergelijkbaar product' or 'Niet gevonden (schatting)'"
+    }
+  ],
+  "total": ${receiptData.total},
+  "comparisonTotal": 0.00,
+  "savings": 0.00
+}
+savings = total - comparisonTotal. Positive means cheaper at ${comparisonStore}. If you cannot find a price, estimate realistically and note it.`;
+
+  const userMessage = `Find ${comparisonStore} prices for these items (bought at ${receiptData.store === 'ah' ? 'Albert Heijn' : 'ALDI'}):\n${itemList}\n\nTotal paid: €${receiptData.total.toFixed(2)}\n\nSearch for current ${comparisonStore} NL prices, then return the JSON.`;
+
+  // Agentic loop: keep calling until we get a final text response (stop_reason = end_turn)
+  const messages = [{ role: "user", content: userMessage }];
+  const MAX_TURNS = 8;
+
+  for (let turn = 0; turn < MAX_TURNS; turn++) {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        system: systemPrompt,
+        messages,
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+
+    // Append assistant response to messages
+    messages.push({ role: "assistant", content: data.content });
+
+    if (data.stop_reason === "end_turn") {
+      // Extract the final text block and parse JSON
+      const textBlocks = data.content.filter(c => c.type === 'text');
+      const text = textBlocks.map(c => c.text || '').join('').trim();
+      // Strip any accidental markdown fences
+      const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+      try {
+        const parsed = JSON.parse(clean);
+        // Ensure savings is calculated correctly
+        parsed.savings = (parsed.total || receiptData.total) - (parsed.comparisonTotal || 0);
+        return parsed;
+      } catch(e) {
+        console.warn('JSON parse failed, using fallback', e, clean);
+        break;
+      }
+    }
+
+    if (data.stop_reason === "tool_use") {
+      // Process all tool_use blocks and add tool_result blocks back
+      const toolUseBlocks = data.content.filter(c => c.type === 'tool_use');
+      const toolResults = toolUseBlocks.map(block => ({
+        type: "tool_result",
+        tool_use_id: block.id,
+        content: "Web search executed. Use the results above to find accurate prices."
+      }));
+      messages.push({ role: "user", content: toolResults });
+      // Continue loop
+    } else {
+      // Unexpected stop reason
+      break;
+    }
+  }
+
+  // Fallback: AI estimate without web search
+  console.warn('Using fallback comparison prices');
+  const fallbackItems = receiptData.items.map(i => {
+    // ALDI is roughly 15-25% cheaper than AH on average
+    const factor = comparisonStore === 'ALDI' ? 0.82 : 1.18;
+    return { ...i, comparePrice: parseFloat((i.price * factor).toFixed(2)), compareNote: 'Schatting (geen web data)' };
+  });
+  const compTotal = fallbackItems.reduce((s, i) => s + i.comparePrice, 0);
+  return {
+    items: fallbackItems,
+    total: receiptData.total,
+    comparisonTotal: parseFloat(compTotal.toFixed(2)),
+    savings: parseFloat((receiptData.total - compTotal).toFixed(2)),
+  };
+}
+
+// ═══════════════════════════════════════════
+// RENDER RESULT
+// ═══════════════════════════════════════════
+function renderResult(receipt) {
+  const container = document.getElementById('scan-result');
+  const storeClass = receipt.store;
+  const storeName = receipt.store === 'ah' ? 'Albert Heijn' : 'ALDI';
+  const savings = receipt.savings || 0;
+  const savingsAbs = Math.abs(savings);
+  const didSave = savings > 0;
+
+  let itemsHtml = '';
+  (receipt.items || []).forEach(item => {
+    const diff = item.price - (item.comparePrice || item.price);
+    const diffText = diff > 0.005 ? `−€${diff.toFixed(2)} bij ${receipt.comparisonStore}` :
+                     diff < -0.005 ? `+€${Math.abs(diff).toFixed(2)} duurder bij ${receipt.comparisonStore}` : 'Zelfde prijs';
+    const diffClass = diff > 0.005 ? '' : diff < -0.005 ? 'worse' : '';
+    itemsHtml += `
+      <div class="item-row">
+        <div>
+          <div class="item-name">${escHtml(item.name)}</div>
+          <div class="item-cat">${escHtml(item.category || 'Overig')}</div>
+        </div>
+        <div class="item-price">
+          <div>€${(item.price || 0).toFixed(2)}</div>
+          <div class="item-compare ${diffClass}">${diffText}</div>
+        </div>
+      </div>`;
+  });
+
+  const dateStr = receipt.date ? new Date(receipt.date).toLocaleDateString('nl-NL', {day:'numeric',month:'long'}) : 'Vandaag';
+
+  container.innerHTML = `
+    <div class="card">
+      <div class="result-header">
+        <div>
+          <div class="card-label">${dateStr}</div>
+          <div class="result-total">€${(receipt.total || 0).toFixed(2)}</div>
+        </div>
+        <span class="store-badge ${storeClass}">${storeName}</span>
+      </div>
+    </div>
+
+    ${savingsAbs > 0.01 ? `
+    <div class="savings-banner">
+      <div>
+        <div class="label" style="${!didSave ? 'color:var(--red)' : ''}">${didSave ? '💚 Je had kunnen besparen bij' : '⚠️ Duurder bij'} ${receipt.comparisonStore}</div>
+        <div style="font-size:12px;color:var(--text-muted)">op basis van vergelijkbare producten</div>
+      </div>
+      <div class="amount" style="${!didSave ? 'color:var(--red)' : ''}">€${savingsAbs.toFixed(2)}</div>
+    </div>` : ''}
+
+    <div class="card">
+      <div class="card-label">Items (${(receipt.items||[]).length})</div>
+      <div class="items-scroll">${itemsHtml}</div>
+    </div>
+
+    <div class="comparison-note">
+      ℹ️ Vergelijkingsprijzen worden opgezocht via web search. Prijzen zijn indicatief — het exacte assortiment kan per winkel verschillen.
+    </div>
+
+    <button class="btn secondary" style="margin-top:14px" onclick="resetScan()">Nieuwe kassabon scannen</button>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// MONTHLY PAGE
+// ═══════════════════════════════════════════
+const MONTH_NAMES = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+
+function changeMonth(dir) {
+  state.currentMonth += dir;
+  if (state.currentMonth > 11) { state.currentMonth = 0; state.currentYear++; }
+  if (state.currentMonth < 0) { state.currentMonth = 11; state.currentYear--; }
+  renderMonthly();
+}
+
+function renderMonthly() {
+  document.getElementById('month-title').textContent = `${MONTH_NAMES[state.currentMonth]} ${state.currentYear}`;
+
+  const receipts = state.receipts.filter(r => {
+    const d = new Date(r.date);
+    return d.getMonth() === state.currentMonth && d.getFullYear() === state.currentYear;
+  });
+
+  const container = document.getElementById('monthly-content');
+
+  if (receipts.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🛒</div><h3>Geen bonnen deze maand</h3><p>Scan je eerste kassabon via het tabblad Scannen.</p></div>`;
+    return;
+  }
+
+  const total = receipts.reduce((s, r) => s + (r.total || 0), 0);
+  const catTotals = {};
+  receipts.forEach(r => {
+    (r.items || []).forEach(item => {
+      const cat = item.category || 'Overig';
+      catTotals[cat] = (catTotals[cat] || 0) + (item.price || 0);
+    });
+  });
+
+  const maxCat = Math.max(...Object.values(catTotals), 1);
+  const sortedCats = Object.entries(catTotals).sort((a,b) => b[1]-a[1]);
+
+  let catBarsHtml = sortedCats.map(([cat, val]) => {
+    const color = CATEGORY_COLORS[cat] || '#8a8778';
+    const pct = (val / maxCat * 100).toFixed(1);
+    return `
+      <div class="cat-bar-row">
+        <div class="cat-bar-header">
+          <span class="name">${cat}</span>
+          <span class="val">€${val.toFixed(2)}</span>
+        </div>
+        <div class="cat-bar-track">
+          <div class="cat-bar-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  let receiptListHtml = receipts.slice().reverse().map(r => {
+    const storeName = r.store === 'ah' ? 'Albert Heijn' : 'ALDI';
+    const d = new Date(r.date);
+    const dateStr = d.toLocaleDateString('nl-NL', {day:'numeric', month:'short'});
+    return `
+      <div class="receipt-list-item" onclick="showReceiptDetail(${r.id})">
+        <div class="receipt-info">
+          <div class="store">${storeName}</div>
+          <div class="receipt-date">${dateStr} · ${(r.items||[]).length} items</div>
+        </div>
+        <div>
+          <div class="receipt-total">€${(r.total||0).toFixed(2)}</div>
+          ${r.savings > 0.01 ? `<div style="font-size:11px;color:var(--green);text-align:right">−€${r.savings.toFixed(2)}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="card">
+      <div class="big-total">
+        <div class="label">Totaal uitgegeven</div>
+        <div class="amount">€${total.toFixed(2)}</div>
+        <div class="sub">${receipts.length} kassabon${receipts.length !== 1 ? 'nen' : ''}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Per categorie</div>
+      ${catBarsHtml}
+    </div>
+
+    <div class="card">
+      <div class="card-label">Kassabonnen</div>
+      ${receiptListHtml}
+    </div>
+  `;
+}
+
+function showReceiptDetail(id) {
+  const receipt = state.receipts.find(r => r.id === id);
+  if (!receipt) return;
+  // Switch to scan tab and render the receipt
+  showPage('scan');
+  document.getElementById('scan-initial').style.display = 'none';
+  document.getElementById('scan-preview').style.display = 'none';
+  document.getElementById('scan-result').style.display = 'block';
+  renderResult(receipt);
+}
+
+// ═══════════════════════════════════════════
+// SAVINGS PAGE
+// ═══════════════════════════════════════════
+function renderSavings() {
+  const container = document.getElementById('savings-content');
+
+  if (state.receipts.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">⭐</div><h3>Nog geen besparingen</h3><p>Scan je eerste kassabon om te zien hoeveel je had kunnen besparen.</p></div>`;
+    return;
+  }
+
+  const totalSpent = state.receipts.reduce((s, r) => s + (r.total || 0), 0);
+  const totalCouldSave = state.receipts.filter(r => r.savings > 0).reduce((s, r) => s + (r.savings || 0), 0);
+  const ahReceipts = state.receipts.filter(r => r.store === 'ah');
+  const aldiReceipts = state.receipts.filter(r => r.store === 'aldi');
+  const ahTotal = ahReceipts.reduce((s,r) => s + (r.total||0), 0);
+  const aldiTotal = aldiReceipts.reduce((s,r) => s + (r.total||0), 0);
+
+  // Monthly savings chart
+  const monthlyData = {};
+  state.receipts.forEach(r => {
+    const d = new Date(r.date);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!monthlyData[key]) monthlyData[key] = { spent: 0, savings: 0 };
+    monthlyData[key].spent += r.total || 0;
+    monthlyData[key].savings += Math.max(0, r.savings || 0);
+  });
+
+  const maxSpent = Math.max(...Object.values(monthlyData).map(m => m.spent), 1);
+  const monthBarsHtml = Object.entries(monthlyData).slice(-6).map(([key, data]) => {
+    const [y, m] = key.split('-');
+    const label = MONTH_NAMES[parseInt(m)-1].slice(0,3);
+    const pct = (data.spent / maxSpent * 100).toFixed(1);
+    return `
+      <div class="month-bar-row">
+        <div class="month-bar-label">${label}</div>
+        <div class="month-bar-track">
+          <div class="month-bar-fill" style="width:${pct}%">
+            <span>€${data.spent.toFixed(0)}</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Top savings items
+  const itemSavings = [];
+  state.receipts.forEach(r => {
+    (r.items||[]).forEach(item => {
+      const diff = (item.price||0) - (item.comparePrice||item.price||0);
+      if (diff > 0.05) {
+        itemSavings.push({ name: item.name, diff, store: r.store, compareStore: r.comparisonStore });
+      }
+    });
+  });
+  itemSavings.sort((a,b) => b.diff - a.diff);
+  const topItems = itemSavings.slice(0, 5);
+
+  const topItemsHtml = topItems.length > 0 ? topItems.map(i => `
+    <div class="item-row">
+      <div>
+        <div class="item-name">${escHtml(i.name)}</div>
+        <div class="item-cat">Goedkoper bij ${i.compareStore}</div>
+      </div>
+      <div class="item-price">
+        <div class="item-compare">−€${i.diff.toFixed(2)}</div>
+      </div>
+    </div>`).join('') : '<p style="font-size:13px;color:var(--text-muted);padding:10px 0">Nog geen productdata beschikbaar.</p>';
+
+  container.innerHTML = `
+    <div class="savings-header">
+      <h2>Jouw besparingen</h2>
+      <p>Totale analyse op basis van ${state.receipts.length} bon${state.receipts.length !== 1 ? 'nen' : ''}</p>
+    </div>
+
+    <div class="savings-big">
+      <div class="label">Potentiële besparing</div>
+      <div class="amount">€${totalCouldSave.toFixed(2)}</div>
+      <div class="sub">als je bij de goedkoopste winkel had gekocht</div>
+    </div>
+
+    <div class="compare-row">
+      <div class="compare-card ah">
+        <div class="store-name">Albert Heijn</div>
+        <div class="amount">€${ahTotal.toFixed(2)}</div>
+        <div class="sub">${ahReceipts.length} bon${ahReceipts.length !== 1 ? 'nen' : ''}</div>
+      </div>
+      <div class="compare-card aldi">
+        <div class="store-name">ALDI</div>
+        <div class="amount">€${aldiTotal.toFixed(2)}</div>
+        <div class="sub">${aldiReceipts.length} bon${aldiReceipts.length !== 1 ? 'nen' : ''}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Maandelijkse uitgaven</div>
+      ${monthBarsHtml || '<p style="font-size:13px;color:var(--text-muted)">Nog niet genoeg data.</p>'}
+    </div>
+
+    <div class="card">
+      <div class="card-label">Top besparingen per product</div>
+      ${topItemsHtml}
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text-dim);font-size:14px">Totaal uitgegeven</span>
+        <span style="font-family:'DM Mono',monospace">€${totalSpent.toFixed(2)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0">
+        <span style="color:var(--green);font-size:14px">Potentiële besparing</span>
+        <span style="font-family:'DM Mono',monospace;color:var(--green)">€${totalCouldSave.toFixed(2)}</span>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+loadLocalState();       // show local data immediately (fast)
+loadFromDrive();        // then pull from Drive and merge (async)
+</script>
+</body>
+</html>
